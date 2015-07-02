@@ -1,0 +1,13 @@
+*.csv
+*.sql
+*.7z
+*.gz
+*.zip
+*.log
+._*
+.RData
+.Rhistory
+*.Rproj
+.Rproj.user/
+.Trashes
+tmp/
