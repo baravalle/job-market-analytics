@@ -11,6 +11,14 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+#' Import jobs
+#'
+#' Imports a unclean jobs CVS dataset.
+#' @param in.file Path for the CSV file
+#' @keywords import
+#' @export
+#' @examples
+#' importJob()
 importJobs<-function(in.file) {
   jobs<-read.csv(in.file, header=FALSE)
 
