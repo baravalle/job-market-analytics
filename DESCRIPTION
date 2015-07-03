@@ -1,0 +1,19 @@
+License: GPL-3
+Imports:
+  stringr
+Package: jobs-market-analysis
+Version: 0.1-1
+Date: 2015-07-02
+Title: Jobs market analysis tools.
+Authors@R: c(person("Andres Baravalle", "Developer", role = c("aut", "cre"),
+		     email = "a.baravalle@uel.ac.uk"),
+		     person("Sin Wee Lee", "Developer", role = "aut",
+		     email = "s.w.lee@uel.ac.uk"),
+	      person("Elise Rubat-Ciagnus", "Developer", role = "aut"),
+	      person("Hélène LUU", "Developer", role = "aut"))
+Maintainer: Andres Baravalle <a.baravalle@uel.ac.uk>
+Depends: R (>= 3.1.0)
+Description: Job market analysis is used to clean and analyse job datasets.
+License: GPL (>= 3)
+URL: https://github.com/baravalle/job-market-analytics
+BugReports: https://github.com/baravalle/job-market-analytics/issues
