@@ -52,6 +52,11 @@ importJobs <- function(in.file) {
     salaryClean <- sapply(strsplit(salary2, "\ *-\ *"), function(x) {x <- as.numeric(x); mean(x) })
 
     jobs <- cbind(jobs, salaryClean)
+
+    # there are some errors in the import
+    # and jobs are spread over several rows. We need to 1) recheck the import 2) in the meanwhile, filter some of those jobs
+    # currently this affects about 2/3 of the dataset import
+    subset(jobs, !is.na(as.numeric(as.character(id))))
   }
 }
 
@@ -68,31 +73,38 @@ exportJobs <- function(jobs, out.file) {
   write.csv2(jobs, file=out.file)
 }
 
-getSecurityJobs <- function(securityKeywords) {
+getJobs <- function(keywords, jobs) {
   # join title & description for next operations
   # we need this only for the security jobs
   jobs$"title and description" <- do.call(paste, c(jobs[c("title", "description")], sep = " "))
 
   #convert keywords into regexp
-  pattern = paste(securityKeywords, collapse="|", sep="")
+  pattern = paste(keywords, collapse="|", sep="")
   pattern = paste("/",pattern, "/", collapse="", sep="")
 
   # identify security jobs by id
-  securityJobsRows <- grep(pattern, jobs$"title and description", ignore.case=T)
+  jobsListRows <- grep(pattern, jobs$"title and description", ignore.case=T)
 
-  securityJobs <- jobs[securityJobsRows,]
+  jobsList <- jobs[jobsListRows,]
 }
 
-getKeywordsData <- function (securityKeywords, securityJobs) {
+selectJobsWithSalary <- function(jobs) {
+  jobs2 <- subset(jobs, salaryClean > 5000 & salaryClean <= 150000)
+  jobs2 <- subset(jobs2, !is.na(as.numeric(as.character(id))))
+  jobs2$salaryClean <- as.integer(as.character(jobs2$salaryClean))
+  jobs2
+}
+
+getKeywordsData <- function (keywords, jobsList) {
 
   keyword <- vector("character");
   njobs <- integer();
   locations <- vector();
   salary <- vector();
 
-  for (i in securityKeywords) {
+  for (i in keywords) {
     # extracting the keywords
-    keywords_rows <- grep(i, securityJobs$"title and description", ignore.case=T)
+    keywords_rows <- grep(i, jobsList$"title and description", ignore.case=T)
 
     keyword <- c(keyword, i)
     njobs <- c(njobs, length(keywords_rows))
@@ -111,12 +123,20 @@ getKeywordsData <- function (securityKeywords, securityJobs) {
 
 }
 
-getKeywordOccurencies <- function(securityKeywords, securityJobs) {
+getSalaryData <- function(jobs) {
+
+
+
+
+
+}
+
+getKeywordOccurencies <- function(keywords, jobsList) {
 
   jobKeywords <- vector()
 
-  for (i in securityKeywords) {
-    keywords_rows <- grep(i, securityJobs$"title and description", ignore.case=T)
+  for (i in keywords) {
+    keywords_rows <- grep(i, jobsList$"title and description", ignore.case=T)
 
     jobKeywords2 <- cbind(keywords_rows,i)
 
@@ -128,4 +148,36 @@ getKeywordOccurencies <- function(securityKeywords, securityJobs) {
   colnames(jobKeywords) <- c("JobId", "Skill")
   jobKeywords
 
+}
+
+printReport <- function (keywords, title, jobs) {
+  tmpjobs <- getJobs(keywords, jobs)
+
+  tmpjobs <- selectJobsWithSalary(tmpjobs)
+
+  # get the data
+  keywordsData <- getKeywordsData(keywords, tmpjobs)
+  keywordsDataPlot <- data.frame(keywordsData$Keyword, keywordsData$Jobs)
+  names(keywordsDataPlot) <- c("Skill", "Jobs")
+
+  # let's remove any keywords with no jobs
+  keywordsDataPlot <- keywordsDataPlot[!keywordsDataPlot$Jobs == 0, ]
+
+  # plotting the keywords
+  barplot(keywordsDataPlot$Jobs,names.arg=keywordsDataPlot$Skill,main=title)
+
+  # need to use proper labels here
+  hist(tmpjobs$salaryClean, breaks = 10, main=title, xlab="Jobs", ylab="Salary")
+  boxplot(as.integer(tmpjobs$salaryClean), main=title)
+  plot(tmpjobs$salaryClean, main=title)
+
+  jobKeywords <- as.data.frame(getKeywordOccurencies(keywords, tmpjobs))
+  # cross tabulation
+  jobKeywordsTable <- table(jobKeywords[["JobId"]], jobKeywords[["Skill"]])
+
+  cor(jobKeywordsTable)
+
+  psych::describe(tmpjobs$salaryClean)
+
+  tmpjobs
 }

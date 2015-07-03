@@ -2,51 +2,36 @@
 setwd("C:/Users/andres/Dropbox/Research/2015/job-market-analytics/R")
 # setwd("C:/Users/andres2/Dropbox/Research/2015/job-market-analytics/R")
 
-library(stringr)
+library("stringr")
+library("ggplot2")
+library("psych")
+
+options(scipen=5)
 source(file="jobMarketAnalysis.r")
 
 # the next 2 functions are hardcoded - not much we can do
 # import the jobs
 jobs <- importJobs("../data/jobs.csv")
 
-stop()
-
-# exportJobs(jobs,"jobsClean.csv")
+# stop()
 
 # set the keywords that will be used
 securityKeywords <- c("CISA", "CISM", "CCSP","CISSP","Security","QSA","Sabanes-Oxley","Penetration Testing","ISO 27001","IISP")
 
-# get the security jobs
-securityJobs <- getSecurityJobs(securityKeywords)
+# securityJobs <- getJobs(securityKeywords)
+securityJobs <- printReport(securityKeywords, "Security jobs", jobs)
 
-# let's free some memory now
-#rm(jobs)
+linuxKeywords = c("Centos", "Fedora", "Ubuntu", "Debian", "Slackware", "Linux", "RHCE", "RHCA", "RHCSA", "Comptia Linux+")
 
-# get the data
-keywordsData <- getKeywordsData(securityKeywords, securityJobs)
+# get the Linux jobs
+linuxJobs <- printReport(linuxKeywords, "Linux jobs", jobs)
 
-keywordsDataPlot <- data.frame(keywordsData$Keyword, keywordsData$Jobs)
-names(keywordsDataPlot) <- c("Skill", "Jobs")
+datascienceKeywords = c("SAS", "SPSS", "Stata", "Mathlab", "Tableau", "data science", "Qlikview", "Base SAS", "R programming")
 
-# let's remove the generic keyword "security" - too many hits
-keywordsDataPlot <- keywordsDataPlot[!keywordsDataPlot$Skill == "Security", ]
+datascienceJobs <- printReport(datascienceKeywords, "Data Science jobs", jobs)
 
-# let's remove any keywords with no jobs
-keywordsDataPlot <- keywordsDataPlot[!keywordsDataPlot$Jobs == 0, ]
+dbKeywords = c("MySQL", "Oracle", "SQL Server", "SQLlight", "Postgresql", "db2", "Sybase")
 
-# plotting the keywords
-barplot(keywordsDataPlot$Jobs,names.arg=keywordsDataPlot$Skill)
+dbJobs <- printReport(datascienceKeywords, "Data Science jobs", jobs)
 
-# getting occurencies on jobs
-jobKeywords <- as.data.frame(getKeywordOccurencies(securityKeywords, securityJobs))
-
-# cross tabulation
-jobKeywordsTable <- table(jobKeywords[["JobId"]], jobKeywords[["Skill"]])
-
-# correlation table
-cor(jobKeywordsTable)
-
-#salary <- str_extract(securityJobs$salary, "[^A-Za-z|&]{4,}")
-#salary <- gsub("^\\s+|\\s+$", "", salary)
-#salary
-
+# still need something to show mean salary by function
