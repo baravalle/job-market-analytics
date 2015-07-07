@@ -33,5 +33,5 @@ datascienceJobs <- printReport(datascienceKeywords, "Data Science jobs", jobs)
 dbKeywords = c("MySQL", "Oracle", "SQL Server", "SQLlight", "Postgresql", "db2", "Sybase")
 
 dbJobs <- printReport(dbKeywords, "DB jobs", jobs)
-print("test")
+#the parameters of last line was wrong now its correct
 # still need something to show mean salary by function
