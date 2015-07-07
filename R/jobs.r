@@ -13,7 +13,7 @@ source(file="jobMarketAnalysis.r")
 # import the jobs
 jobs <- importJobs("../data/jobs.csv")
 
-# stop()
+ stop()
 
 # set the keywords that will be used
 securityKeywords <- c("CISA", "CISM", "CCSP","CISSP","Security","QSA","Sabanes-Oxley","Penetration Testing","ISO 27001","IISP")
