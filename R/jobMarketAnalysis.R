@@ -167,7 +167,7 @@ printReport <- function (keywords, title, jobs) {
   barplot(keywordsDataPlot$Jobs,names.arg=keywordsDataPlot$Skill,main=title)
 
   # need to use proper labels here
-  hist(tmpjobs$salaryClean, breaks = 10, main=title, xlab="Jobs", ylab="Salary")
+  hist(tmpjobs$salaryClean, breaks = 10, main=title, xlab="Salary", ylab="Jobs")
   boxplot(as.integer(tmpjobs$salaryClean), main=title)
   plot(tmpjobs$salaryClean, main=title)
 
