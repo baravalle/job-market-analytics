@@ -178,6 +178,10 @@ printReport <- function (keywords, title, jobs) {
   cor(jobKeywordsTable)
 
   psych::describe(tmpjobs$salaryClean)
+  
+  #k-mean
+  km <- kmeans(tmpjobs$salaryClean, 4, iter.max = 100, nstart = 30)
+  plot(tmpjobs$salaryClean, main = title, col=km$cluster)
 
   tmpjobs
 }
