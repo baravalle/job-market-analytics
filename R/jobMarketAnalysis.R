@@ -7,12 +7,6 @@
 #' @import stringr
 NULL
 
-jobMarketAnalysis <- function () {
-
-
-
-}
-
 
 #' Import jobs
 #'
@@ -23,6 +17,8 @@ jobMarketAnalysis <- function () {
 #' @export
 #' @examples
 #' importJob()
+#' 
+
 importJobs <- function(in.file) {
   # rewrite using more parameters, to make it more generic - e.g. pass column titles.
 
@@ -184,4 +180,30 @@ printReport <- function (keywords, title, jobs) {
   plot(tmpjobs$salaryClean, main = title, col=km$cluster)
 
   tmpjobs
+}
+
+jobMarketAnalysis <- function (keywords, jobsList) {
+  
+  #making data frame of true/false, 0 = false ; 1 = true
+  tmpOccur <- data.frame(getKeywordOccurencies(keywords, jobsList))
+  tmpTF <- matrix("0", ncol = length(keywords) , nrow = nrow(jobsList))
+  colnames(tmpTF) <- keywords
+  
+  for ( k in 1:nrow(tmpOccur)){
+    
+    i <- as.numeric(tmpOccur[k, "JobId"])
+    j <- as.character(tmpOccur[k, "Skill"])
+    
+    tmpTF[i,j] <- "1"
+    
+  }
+
+  #final data frame T/F
+  tmpTF <- data.frame(tmpTF, stringsAsFactors = TRUE)
+
+  #we applied associate rules algorithm of R
+  rules <- apriori(tmpTF, parameter=list(support=0.95,confidence=0.95))
+  inspect(rules)
+  
+  rules
 }
