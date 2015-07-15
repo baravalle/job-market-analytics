@@ -186,12 +186,37 @@ printReport <- function (keywords, title, jobs) {
   tmpjobs
 }
 
-getAssociateRules <- function (keywords, jobsList) {
+getAssociateRules <- function (keywords, jobsList, allKeyword) {
   
-  #making data frame of true/false, 0 = false ; 1 = true
   tmpOccur <- data.frame(getKeywordOccurencies(keywords, jobsList))
-  tmpTF <- matrix("0", ncol = length(keywords) , nrow = nrow(jobsList))
-  colnames(tmpTF) <- keywords
+  
+  # We can do two different associate rules:
+  # one with all the keywords (allKeyword == "Yes") 
+  # and the other with only the keyword which are inside description and title (allKeyword == "No")
+  
+  
+  if (allKeyword == "No"){
+    
+    # get the data
+    keywordsData <- getKeywordsData(keywords, jobsList)
+    keywordsDataPlot <- data.frame(keywordsData$Keyword, keywordsData$Jobs)
+    names(keywordsDataPlot) <- c("Skill", "Jobs")
+    
+    # let's remove any keywords with no jobs
+    keywordsDataPlot <- keywordsDataPlot[!keywordsDataPlot$Jobs == 0, ]
+    
+    #making data frame of true/false, 0 = false ; 1 = true
+    tmpTF <- matrix("0", ncol = length( keywordsDataPlot$Skill) , nrow = nrow(jobsList))
+    colnames(tmpTF) <- keywordsDataPlot$Skill
+    
+  }else{
+    
+    tmpTF <- matrix("0", ncol = length( keywords) , nrow = nrow(jobsList))
+    colnames(tmpTF) <- keywords
+    
+  }
+  
+  #fill in the T/F data frame
   
   for ( k in 1:nrow(tmpOccur)){
     
@@ -206,7 +231,7 @@ getAssociateRules <- function (keywords, jobsList) {
   tmpTF <- data.frame(tmpTF, stringsAsFactors = TRUE)
 
   #we applied associate rules algorithm of R
-  rules <- apriori(tmpTF, parameter=list(support=0.98,confidence=0.98))
+  rules <- apriori(tmpTF, parameter=list(support=0.95,confidence=0.95))
   inspect(rules)
   
   rules
