@@ -19,6 +19,10 @@ NULL
 #' importJob()
 #' 
 
+jobMarketAnalysis <- function(){
+  
+}
+
 importJobs <- function(in.file) {
   # rewrite using more parameters, to make it more generic - e.g. pass column titles.
 
@@ -182,7 +186,7 @@ printReport <- function (keywords, title, jobs) {
   tmpjobs
 }
 
-jobMarketAnalysis <- function (keywords, jobsList) {
+getAssociateRules <- function (keywords, jobsList) {
   
   #making data frame of true/false, 0 = false ; 1 = true
   tmpOccur <- data.frame(getKeywordOccurencies(keywords, jobsList))
@@ -202,7 +206,7 @@ jobMarketAnalysis <- function (keywords, jobsList) {
   tmpTF <- data.frame(tmpTF, stringsAsFactors = TRUE)
 
   #we applied associate rules algorithm of R
-  rules <- apriori(tmpTF, parameter=list(support=0.95,confidence=0.95))
+  rules <- apriori(tmpTF, parameter=list(support=0.98,confidence=0.98))
   inspect(rules)
   
   rules
