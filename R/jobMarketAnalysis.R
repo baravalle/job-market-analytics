@@ -101,7 +101,7 @@ getKeywordsData <- function (keywords, jobsList) {
   njobs <- integer();
   locations <- vector();
   salary <- vector();
-
+  
   for (i in keywords) {
     # extracting the keywords
     keywords_rows <- grep(i, jobsList$"title and description", ignore.case=T)
@@ -226,13 +226,115 @@ getAssociateRules <- function (keywords, jobsList, allKeyword) {
     tmpTF[i,j] <- "1"
     
   }
+  
+  #Final data frame T/F
+  tmpTF <- data.frame(tmpTF, stringsAsFactors = TRUE)
+  
+  #we applied associate rules algorithm of R
+  rules <- apriori(tmpTF, parameter=list(support=0.50,confidence=0.50))
+  inspect(rules)
+  rules
+}
 
-  #final data frame T/F
+getClustering <- function(keywords, jobsList){
+  
+  tmpOccur <- data.frame(getKeywordOccurencies(keywords, jobsList))
+  tmpTF <- matrix("0", ncol = length( keywords) + 3 , nrow = nrow(jobsList))
+  colnames(tmpTF) <- c(keywords, "lowSalary", "mediumSalary", "highSalary")
+  
+  for ( k in 1:nrow(tmpOccur)){
+    
+    i <- as.numeric(tmpOccur[k, "JobId"])
+    j <- as.character(tmpOccur[k, "Skill"])
+    
+    tmpTF[i,j] <- "1"
+    
+  }
+  
+  #k-mean on salary
+  km <- kmeans(jobsList$salaryClean, 3, iter.max = 100, nstart = 30)
+  
+  #determine which cluster of salary corresponding to low medium or hight salary
+  i <- 1
+  j <- 1
+  while (km$cluster[i] == km$cluster[j]){
+      j <- j+1
+  }
+  
+  k <- j
+  
+  while ((km$cluster[i] == km$cluster[k]) || (km$cluster[j] == km$cluster[k]) ){
+      k <- k+1
+  }
+  
+  vectSalijk <- c(jobsList$salaryClean[i],jobsList$salaryClean[j],jobsList$salaryClean[k])
+  
+  if (jobsList$salaryClean[i] == max(vectSalijk)){
+    high <- km$cluster[i]
+  }else{
+      if(jobsList$salaryClean[j] == max(vectSalijk)){
+        high <- km$cluster[j]
+      }else{
+        high <- km$cluster[k]
+      }
+  }
+  
+  if (jobsList$salaryClean[i] == min(vectSalijk)){
+    low <- km$cluster[i]
+  }else{
+     if(jobsList$salaryClean[j] == min(vectSalijk)){
+       low <- km$cluster[j]
+     }else{
+       low <- km$cluster[k]
+     }
+  }
+  
+  
+  #fill in the low medium and high salary with 0 and 1
+  for ( i in 1:nrow(jobsList) ){
+    
+      if (km$cluster[i] == low){
+      
+      tmpTF[i,"lowSalary"]=1
+      tmpTF[i,"mediumSalary"]=0
+      tmpTF[i,"highSalary"]=0
+      
+    }else{
+      
+      if (km$cluster[i] == high){
+        
+      tmpTF[i,"lowSalary"]=0
+      tmpTF[i,"mediumSalary"]=0
+      tmpTF[i,"highSalary"]=1
+      
+      }else{
+        
+        tmpTF[i,"lowSalary"]=0
+        tmpTF[i,"mediumSalary"]=1
+        tmpTF[i,"highSalary"]=0
+        
+       }
+      }
+  }
+
+  #convertion in data frame T/F
   tmpTF <- data.frame(tmpTF, stringsAsFactors = TRUE)
 
-  #we applied associate rules algorithm of R
-  rules <- apriori(tmpTF, parameter=list(support=0.95,confidence=0.95))
-  inspect(rules)
+  #k-mean on jobs
+  km2 <- kmeans(tmpTF, 3, iter.max = 100, nstart = 30)
   
-  rules
+}
+
+getAllKeywordOccurencies <- function(in.file, jobsList){
+  
+  AllKeywords <- read.xlsx(in.file, 1,header = TRUE)
+  AllKeywords <- AllKeywords$Skill
+  AllKeywords <- as.character(AllKeywords)
+  AllKeywords <- gsub("\\+", "[+]", AllKeywords)
+  AllKeywordsData <- getKeywordsData(AllKeywords, jobsList)
+  OccurPercent <- AllKeywordsData$Jobs / nrow(jobsList)
+  AllKeywordsData <- data.frame(AllKeywordsData$Keyword, AllKeywordsData$Jobs, OccurPercent)
+  names(AllKeywordsData) <- c("Skill", "nJobs", "Percent")
+  AllKeywordsData
+  
 }
