@@ -104,6 +104,7 @@ getKeywordsData <- function (keywords, jobsList) {
   
   for (i in keywords) {
     # extracting the keywords
+
     keywords_rows <- grep(i, jobsList$"title and description", ignore.case=T)
 
     keyword <- c(keyword, i)
@@ -252,7 +253,7 @@ getClustering <- function(keywords, jobsList){
   }
   
   #k-mean on salary
-  km <- kmeans(jobsList$salaryClean, 3, iter.max = 100, nstart = 30)
+  km <- kmeans(jobsList$salaryClean, 3, iter.max = 100, nstart = 50)
   
   #determine which cluster of salary corresponding to low medium or hight salary
   i <- 1
@@ -321,8 +322,51 @@ getClustering <- function(keywords, jobsList){
   tmpTF <- data.frame(tmpTF, stringsAsFactors = TRUE)
 
   #k-mean on jobs
-  km2 <- kmeans(tmpTF, 3, iter.max = 100, nstart = 30)
+  km2 <- kmeans(tmpTF, 5, iter.max = 100, nstart = 50)
   
+  #data salary for plot
+  salary <- vector("character", nrow(tmpTF))
+  
+  for (i in 1:nrow(tmpTF)){
+    
+    if(tmpTF[i,"lowSalary"] == 1){
+      salary[i] <- "low"
+      
+    }else{
+      
+      if(tmpTF[i,"mediumSalary"] == 1){
+        salary[i] <- "medium"
+        
+      }else{
+        salary[i] <- "high"
+      }
+    }
+  }
+  
+  tmpTFplot <- cbind(tmpTF, salary)
+  names(tmpTFplot) <- c(names(tmpTF), "salary")
+  
+  plot(CISSP~salary, tmpTFplot, col=km2$cluster)
+  plot(jobsList$salaryClean, tmpTFplot$CISSP, col=km2$cluster)
+  plot(jobsList$salaryClean, col=km2$cluster)
+
+  #plot with location
+  
+  london <- vector("numeric", nrow(tmpTF))
+  london_rows <- grep("london", jobsList$"location2", ignore.case=T)
+  
+  for(i in london_rows){
+    london[i] <- 1
+  }
+  
+  tmpTFplot2 <- cbind(tmpTFplot, as.character(london))
+  names(tmpTFplot2) <- c(names(tmpTFplot), "londonOrNot")
+  
+  plot(londonOrNot~salary, tmpTFplot2, col=km2$cluster)
+  plot(jobsList$salaryClean, london, col=km2$cluster)
+ 
+  
+  km2
 }
 
 getAllKeywordOccurencies <- function(in.file, jobsList){
