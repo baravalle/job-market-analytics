@@ -7,7 +7,7 @@ library("stringr")
 library("psych")
 library(arules)
 library("xlsx")
-
+library("WriteXLS")
 
 # I put as comment the line that we don't working on for the moment.
 
@@ -24,6 +24,27 @@ source(file="jobMarketAnalysis.r")
 
 
 securityKeywords <- c("CISA", "CISM", "CCSP","CISSP","Security","QSA","Sabanes-Oxley","Penetration Testing","ISO 27001","IISP")
+securityMatrix <- getFrequencyMatrix(securityKeywords, securityJobs)
+securityCluster <- getClustering(securityKeywords, securityJobs)
+plot(securityJobs$salaryClean, securityMatrix$Security, col=securityCluster$cluster)
+
+stop()
+
+securityCluster <- getClustering(securityKeywords, securityJobs)
+write.csv2(securityCluster,file = "securityDataCluster5.csv")
+
+linuxCluster <- getClustering(linuxKeywords, linuxJobs)
+write.csv2(linuxCluster, file ="linuxClusterData.csv")
+
+dsCluster <- getClustering(datascienceKeywords, datascienceJobs)
+write.csv2(dsCluster, file ="dsClusterData.csv")
+
+dbCluster <- getClustering(dbKeywords, dbJobs)
+write.csv2(dbCluster, file ="dbClusterData.csv")
+
+
+
+securityKeywords <- c("CISA", "CISM", "CCSP","CISSP","Security","QSA","Sabanes-Oxley","Penetration Testing","ISO 27001","IISP")
 #securityNewKeywords <- c("CISA", "CISM", "CCSP","CISSP","QSA","Sabanes-Oxley","Penetration Testing","ISO 27001","IISP")
 #securityJobs <- printReport(securityKeywords, "Security jobs", jobs)
 
@@ -35,7 +56,6 @@ securityCluster <- getClustering(securityKeywords, securityJobs)
 #names(securityJobs2) <- c(names(securityJobs), "Cluster")
 
 #securityAllKoccur<- getAllKeywordOccurencies("../data/Keywords.xlsx", securityJobs) 
-stop()
 
 
 

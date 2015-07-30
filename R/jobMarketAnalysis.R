@@ -234,23 +234,44 @@ getAssociateRules <- function (keywords, jobsList, allKeyword) {
   #we applied associate rules algorithm of R
   rules <- apriori(tmpTF, parameter=list(support=0.50,confidence=0.50))
   inspect(rules)
-  rules
+  rules 
 }
 
-getClustering <- function(keywords, jobsList){
+
+getFrequencyMatrix <- function(keywords, jobsList){
   
-  tmpOccur <- data.frame(getKeywordOccurencies(keywords, jobsList))
-  tmpTF <- matrix("0", ncol = length( keywords) + 3 , nrow = nrow(jobsList))
+  
+  #tmpTF is the frequency matrix like a true-false matrix but with the number of occurence of each keywords for each jobs
+  
+  tmpTF <- matrix(0, ncol = length( keywords) + 3 , nrow = nrow(jobsList))
   colnames(tmpTF) <- c(keywords, "lowSalary", "mediumSalary", "highSalary")
   
-  for ( k in 1:nrow(tmpOccur)){
-    
-    i <- as.numeric(tmpOccur[k, "JobId"])
-    j <- as.character(tmpOccur[k, "Skill"])
-    
-    tmpTF[i,j] <- "1"
-    
+  for(j in 1:nrow(jobsList)){
+
+    for(i in keywords){
+      
+      kw <- paste("[,. ]",i,"[,. ]", sep="")
+      
+      if( attr(regexpr(kw, jobsList$"title and description"[j], ignore.case = T),"match.length") != -1){
+        tmpTF[j,i] <- length(gregexpr(kw, jobsList$"title and description"[j], ignore.case = T)[[1]])
+      }else{
+        tmpTF[j,i] <- 0
+      }
+    }
   }
+  
+  #normalize the frequency matrix
+  sum <- rowSums(tmpTF)
+  for(j in 1:nrow(jobsList)){
+    
+    for(i in keywords){
+      
+      if (sum[j] != 0){
+        tmpTF[j,i] <- tmpTF[j,i]/sum[j]
+      }
+    }
+  }
+    
   
   #k-mean on salary
   km <- kmeans(jobsList$salaryClean, 3, iter.max = 100, nstart = 50)
@@ -259,13 +280,13 @@ getClustering <- function(keywords, jobsList){
   i <- 1
   j <- 1
   while (km$cluster[i] == km$cluster[j]){
-      j <- j+1
+    j <- j+1
   }
   
   k <- j
   
   while ((km$cluster[i] == km$cluster[k]) || (km$cluster[j] == km$cluster[k]) ){
-      k <- k+1
+    k <- k+1
   }
   
   vectSalijk <- c(jobsList$salaryClean[i],jobsList$salaryClean[j],jobsList$salaryClean[k])
@@ -273,28 +294,28 @@ getClustering <- function(keywords, jobsList){
   if (jobsList$salaryClean[i] == max(vectSalijk)){
     high <- km$cluster[i]
   }else{
-      if(jobsList$salaryClean[j] == max(vectSalijk)){
-        high <- km$cluster[j]
-      }else{
-        high <- km$cluster[k]
-      }
+    if(jobsList$salaryClean[j] == max(vectSalijk)){
+      high <- km$cluster[j]
+    }else{
+      high <- km$cluster[k]
+    }
   }
   
   if (jobsList$salaryClean[i] == min(vectSalijk)){
     low <- km$cluster[i]
   }else{
-     if(jobsList$salaryClean[j] == min(vectSalijk)){
-       low <- km$cluster[j]
-     }else{
-       low <- km$cluster[k]
-     }
+    if(jobsList$salaryClean[j] == min(vectSalijk)){
+      low <- km$cluster[j]
+    }else{
+      low <- km$cluster[k]
+    }
   }
   
   
   #fill in the low medium and high salary with 0 and 1
   for ( i in 1:nrow(jobsList) ){
     
-      if (km$cluster[i] == low){
+    if (km$cluster[i] == low){
       
       tmpTF[i,"lowSalary"]=1
       tmpTF[i,"mediumSalary"]=0
@@ -304,25 +325,32 @@ getClustering <- function(keywords, jobsList){
       
       if (km$cluster[i] == high){
         
-      tmpTF[i,"lowSalary"]=0
-      tmpTF[i,"mediumSalary"]=0
-      tmpTF[i,"highSalary"]=1
-      
+        tmpTF[i,"lowSalary"]=0
+        tmpTF[i,"mediumSalary"]=0
+        tmpTF[i,"highSalary"]=1
+        
       }else{
         
         tmpTF[i,"lowSalary"]=0
         tmpTF[i,"mediumSalary"]=1
         tmpTF[i,"highSalary"]=0
         
-       }
       }
+    }
   }
-
-  #convertion in data frame T/F
+  
+  #convertion in data frame the frequency matrix
   tmpTF <- data.frame(tmpTF, stringsAsFactors = TRUE)
+  
+}
+
+
+getClustering <- function(keywords, jobsList){
+  
+  tmpTF <- getFrequencyMatrix(keywords, jobsList)
 
   #k-mean on jobs
-  km2 <- kmeans(tmpTF, 5, iter.max = 100, nstart = 50)
+  km2 <- kmeans(tmpTF, 6, iter.max = 100, nstart = 50)
   
   #data salary for plot
   salary <- vector("character", nrow(tmpTF))
@@ -346,9 +374,9 @@ getClustering <- function(keywords, jobsList){
   tmpTFplot <- cbind(tmpTF, salary)
   names(tmpTFplot) <- c(names(tmpTF), "salary")
   
-  plot(CISSP~salary, tmpTFplot, col=km2$cluster)
+#  plot(CISSP~salary, tmpTFplot, col=km2$cluster)
   plot(jobsList$salaryClean, tmpTFplot$CISSP, col=km2$cluster)
-  plot(jobsList$salaryClean, col=km2$cluster)
+#  plot(jobsList$salaryClean, col=km2$cluster)
 
   #plot with location
   
@@ -362,10 +390,11 @@ getClustering <- function(keywords, jobsList){
   tmpTFplot2 <- cbind(tmpTFplot, as.character(london))
   names(tmpTFplot2) <- c(names(tmpTFplot), "londonOrNot")
   
-  plot(londonOrNot~salary, tmpTFplot2, col=km2$cluster)
-  plot(jobsList$salaryClean, london, col=km2$cluster)
+#  plot(londonOrNot~salary, tmpTFplot2, col=km2$cluster)
+#  plot(jobsList$salaryClean, london, col=km2$cluster)
  
-  
+  tmpTFplot3 <- cbind(tmpTFplot2, km2$cluster)
+  names(tmpTFplot3) <- c(names(tmpTFplot2), "cluster")
   km2
 }
 
