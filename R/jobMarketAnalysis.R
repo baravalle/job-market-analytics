@@ -237,14 +237,60 @@ getAssociateRules <- function (keywords, jobsList, allKeyword) {
   rules 
 }
 
+getDegree <- function(jobsList){
+  
+  level <- c("Student","Entry","Experienced","Supervisor of Staff","Executive")
+  
+  vect <- vector("numeric", nrow(jobsList))
+  k<- 1
+  
+  for(i in level){
+    
+    vect_rows <- grep(i, jobsList$"career level", ignore.case=T)
+    for(j in vect_rows){
+      vect[j] <- k
+    }
+    k<-k+1
+  }
+  
+  vect
+}
 
-getFrequencyMatrix <- function(keywords, jobsList){
+
+getLocation <- function(jobsList){
+  
+  # locations <- c("London", "Birmingham", "Manchester", "Leeds", "Bristol", "Sheffield", "Coventry", "Cardiff", "Reading", "Nottingham")
+  locations <- c("Nottingham", "Reading", "Cardiff", "Coventry", "Sheffield", "Bristol", "Leeds", "Manchester", "Birmingham", "London")
+  
+  vect <- vector("numeric", nrow(jobsList))
+  k<- 1
+  
+  for(i in locations){
+    
+    vect_rows <- grep(i, jobsList$"location2", ignore.case=T)
+    for(j in vect_rows){
+      vect[j] <- k
+    }
+    k<-k+1
+  }
+  
+  vect
+}
+
+
+getFrequencyMatrix <- function(keywords, jobsList, discret){
   
   
   #tmpTF is the frequency matrix like a true-false matrix but with the number of occurence of each keywords for each jobs
   
-  tmpTF <- matrix(0, ncol = length( keywords) + 3 , nrow = nrow(jobsList))
-  colnames(tmpTF) <- c(keywords, "lowSalary", "mediumSalary", "highSalary")
+  if(discret=="T"){
+    tmpTF <- matrix(0, ncol = length( keywords) + 3 , nrow = nrow(jobsList))
+    colnames(tmpTF) <- c(keywords, "lowSalary", "mediumSalary", "highSalary")
+  }else{
+    tmpTF <- matrix(0, ncol = length( keywords) , nrow = nrow(jobsList))
+    colnames(tmpTF) <- c(keywords)
+  }
+ 
   
   for(j in 1:nrow(jobsList)){
 
@@ -273,129 +319,132 @@ getFrequencyMatrix <- function(keywords, jobsList){
   }
     
   
-  #k-mean on salary
-  km <- kmeans(jobsList$salaryClean, 3, iter.max = 100, nstart = 50)
+if(discret == "T"){
   
-  #determine which cluster of salary corresponding to low medium or hight salary
-  i <- 1
-  j <- 1
-  while (km$cluster[i] == km$cluster[j]){
-    j <- j+1
-  }
-  
-  k <- j
-  
-  while ((km$cluster[i] == km$cluster[k]) || (km$cluster[j] == km$cluster[k]) ){
-    k <- k+1
-  }
-  
-  vectSalijk <- c(jobsList$salaryClean[i],jobsList$salaryClean[j],jobsList$salaryClean[k])
-  
-  if (jobsList$salaryClean[i] == max(vectSalijk)){
-    high <- km$cluster[i]
-  }else{
-    if(jobsList$salaryClean[j] == max(vectSalijk)){
-      high <- km$cluster[j]
-    }else{
-      high <- km$cluster[k]
-    }
-  }
-  
-  if (jobsList$salaryClean[i] == min(vectSalijk)){
-    low <- km$cluster[i]
-  }else{
-    if(jobsList$salaryClean[j] == min(vectSalijk)){
-      low <- km$cluster[j]
-    }else{
-      low <- km$cluster[k]
-    }
-  }
-  
-  
-  #fill in the low medium and high salary with 0 and 1
-  for ( i in 1:nrow(jobsList) ){
+   
+    #k-mean on salary
+    km <- kmeans(jobsList$salaryClean, 3, iter.max = 100, nstart = 50)
     
-    if (km$cluster[i] == low){
-      
-      tmpTF[i,"lowSalary"]=1
-      tmpTF[i,"mediumSalary"]=0
-      tmpTF[i,"highSalary"]=0
-      
+    #determine which cluster of salary corresponding to low medium or hight salary
+    i <- 1
+    j <- 1
+    while (km$cluster[i] == km$cluster[j]){
+      j <- j+1
+    }
+    
+    k <- j
+    
+    while ((km$cluster[i] == km$cluster[k]) || (km$cluster[j] == km$cluster[k]) ){
+      k <- k+1
+    }
+    
+    vectSalijk <- c(jobsList$salaryClean[i],jobsList$salaryClean[j],jobsList$salaryClean[k])
+    
+    if (jobsList$salaryClean[i] == max(vectSalijk)){
+      high <- km$cluster[i]
     }else{
+      if(jobsList$salaryClean[j] == max(vectSalijk)){
+        high <- km$cluster[j]
+      }else{
+        high <- km$cluster[k]
+      }
+    }
+    
+    if (jobsList$salaryClean[i] == min(vectSalijk)){
+      low <- km$cluster[i]
+    }else{
+      if(jobsList$salaryClean[j] == min(vectSalijk)){
+        low <- km$cluster[j]
+      }else{
+        low <- km$cluster[k]
+      }
+    }
+    
+    
+    #fill in the low medium and high salary with 0 and 1
+    for ( i in 1:nrow(jobsList) ){
       
-      if (km$cluster[i] == high){
+      if (km$cluster[i] == low){
         
-        tmpTF[i,"lowSalary"]=0
+        tmpTF[i,"lowSalary"]=1
         tmpTF[i,"mediumSalary"]=0
-        tmpTF[i,"highSalary"]=1
+        tmpTF[i,"highSalary"]=0
         
       }else{
         
-        tmpTF[i,"lowSalary"]=0
-        tmpTF[i,"mediumSalary"]=1
-        tmpTF[i,"highSalary"]=0
-        
+        if (km$cluster[i] == high){
+          
+          tmpTF[i,"lowSalary"]=0
+          tmpTF[i,"mediumSalary"]=0
+          tmpTF[i,"highSalary"]=1
+          
+        }else{
+          
+          tmpTF[i,"lowSalary"]=0
+          tmpTF[i,"mediumSalary"]=1
+          tmpTF[i,"highSalary"]=0
+          
+        }
       }
     }
-  }
+    
+    tmpTF <- data.frame(tmpTF)
+    
+}else{
+  tmp <- data.frame(tmpTF)
+  tmpTF <- data.frame(tmpTF, jobsList$salaryClean)
+  names(tmpTF) <- c(names(tmp),"salary")
+}
+
   
-  #convertion in data frame the frequency matrix
-  tmpTF <- data.frame(tmpTF, stringsAsFactors = TRUE)
+  vect <- getLocation(jobsList)
+  tmpTF2 <- data.frame(cbind(tmpTF, vect))
+  names(tmpTF2) <- c(names(tmpTF), "location")
   
+  vect <- getDegree(jobsList)
+  tmpTF3 <- data.frame(cbind(tmpTF2, vect))
+  names(tmpTF3) <- c(names(tmpTF2), "level")
+  
+  
+  tmpTF3
 }
 
 
-getClustering <- function(keywords, jobsList){
-  
-  tmpTF <- getFrequencyMatrix(keywords, jobsList)
 
-  #k-mean on jobs
-  km2 <- kmeans(tmpTF, 6, iter.max = 100, nstart = 50)
+getClustering <- function(keywords, jobsList,tmpTF2){
   
-  #data salary for plot
-  salary <- vector("character", nrow(tmpTF))
-  
-  for (i in 1:nrow(tmpTF)){
-    
-    if(tmpTF[i,"lowSalary"] == 1){
-      salary[i] <- "low"
-      
-    }else{
-      
-      if(tmpTF[i,"mediumSalary"] == 1){
-        salary[i] <- "medium"
-        
-      }else{
-        salary[i] <- "high"
-      }
-    }
-  }
-  
-  tmpTFplot <- cbind(tmpTF, salary)
-  names(tmpTFplot) <- c(names(tmpTF), "salary")
-  
-#  plot(CISSP~salary, tmpTFplot, col=km2$cluster)
-  plot(jobsList$salaryClean, tmpTFplot$CISSP, col=km2$cluster)
-#  plot(jobsList$salaryClean, col=km2$cluster)
 
-  #plot with location
   
-  london <- vector("numeric", nrow(tmpTF))
-  london_rows <- grep("london", jobsList$"location2", ignore.case=T)
-  
-  for(i in london_rows){
-    london[i] <- 1
-  }
-  
-  tmpTFplot2 <- cbind(tmpTFplot, as.character(london))
-  names(tmpTFplot2) <- c(names(tmpTFplot), "londonOrNot")
-  
-#  plot(londonOrNot~salary, tmpTFplot2, col=km2$cluster)
-#  plot(jobsList$salaryClean, london, col=km2$cluster)
+  km2 <- kmeans(tmpTF2, 6, iter.max = 1000, nstart = 200)
+#  plot(jobsList$salaryClean, tmpTF$Security, main = "Security Frequency versus Security", col=km2$cluster)
  
-  tmpTFplot3 <- cbind(tmpTFplot2, km2$cluster)
-  names(tmpTFplot3) <- c(names(tmpTFplot2), "cluster")
-  km2
+  
+     plot3d(tmpTF2$location, tmpTF2$level, jobsList$salaryClean, col=km2$cluster, type="s", size=0.5, axes=F)
+     axes3d(edges=c("x--", "y--", "z"), lwd=3, axes.len=2, labels=FALSE)
+     grid3d("x")
+     grid3d("y")
+     grid3d("z")
+  
+  
+ scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$level, tmpTF2$Security, main = " x = Continuous Salary, y = Level, z = Security Frequency", color = km2$cluster)
+#     scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$location, tmpTF2$Oracle, main = " x = Continuous Salary, y = Location, z = Oracle Frequency", color = km2$cluster)
+
+#    scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$location, tmpTF2$Penetration.Testing, main = " x = Continuous Salary, y = Location, z = Penetration Testing Frequency", color = km2$cluster)
+#    scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$location, tmpTF2$Security, main = " x = Continuous Salary, y = Location, z = Security Frequency", color = km2$cluster)
+#    
+#   scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$londonOrNot, tmpTF2$Centos, main = " x = Continuous Salary, y = LondonOrNot, z = Centos Frequency", color = km2$cluster)
+#   scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$londonOrNot, tmpTF2$Debian, main = " x = Continuous Salary, y = LondonOrNot, z = Debian Frequency", color = km2$cluster)
+#   scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$londonOrNot, tmpTF2$Linux, main = " x = Continuous Salary, y = LondonOrNot, z = Linux Frequency", color = km2$cluster)
+#    
+#   scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$londonOrNot, tmpTF2$Matlab, main = " x = Continuous Salary, y = LondonOrNot, z = Matlab Frequency", color = km2$cluster)
+#   scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$londonOrNot, tmpTF2$SAS, main = " x = Continuous Salary, y = LondonOrNot, z = SAS Frequency", color = km2$cluster)
+#   scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$londonOrNot, tmpTF2$SPSS, main = " x = Continuous Salary, y = LondonOrNot, z = SPSS Frequency", color = km2$cluster)
+#   
+#  scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$londonOrNot, tmpTF2$MySQL, main = " x = Continuous Salary, y = LondonOrNot, z = MySQL Frequency", color = km2$cluster)
+#  scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$londonOrNot, tmpTF2$Oracle, main = " x = Continuous Salary, y = LondonOrNot, z = Oracle Frequency", color = km2$cluster)
+#  scatterplot3d::scatterplot3d(jobsList$salaryClean, tmpTF2$londonOrNot, tmpTF2$SQL.Server, main = " x = Continuous Salary, y = LondonOrNot, z = SQL.Server Frequency", color = km2$cluster)
+#   
+ km2
 }
 
 getAllKeywordOccurencies <- function(in.file, jobsList){
@@ -411,3 +460,31 @@ getAllKeywordOccurencies <- function(in.file, jobsList){
   AllKeywordsData
   
 }
+
+getPCA <- function(keywords, jobsList, tmpTF, nb){
+  
+  
+  tmpTF2 <- data.frame(cbind(tmpTF$location, jobsList$salaryClean, tmpTF$level)) 
+  names(tmpTF2) <- c("location", "salary", "level")
+  
+  for(i in 1:nb){
+    
+    tmp <- tmpTF2
+    tmpTF2 <- data.frame(cbind(tmpTF2, tmpTF[,i]))
+    names(tmpTF2) <- c(names(tmp),keywords[i])
+    
+  }
+
+  
+  #############  METHOD 1 http://planspace.org/2013/02/03/pca-3d-visualization-and-clustering-in-r/
+  # Installation du paquet FactoMine R
+  #apply pca
+    secPCA <- PCA(tmpTF2, graph=TRUE)
+    plot(secPCA, cex=0.3, select = 0 , shadow= TRUE)  # cex taille des labels, select= selectionner selon crit?re, ici pour retirer labels, shadow: qd ya labels, axes dessin?es shadow si labels chevauchent
+    secPCA
+  #http://www.inside-r.org/packages/cran/pca3d/docs/pca3d
+  
+    
+}
+
+
